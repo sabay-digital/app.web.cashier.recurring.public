@@ -1,0 +1,73 @@
+{
+  "name": "app.web.cashier.sample.ssn.digital",
+  "version": "1.0.0",
+  "description": "Sample recurring cashier on SSN with NodeJS.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/www",
+    "start-dev": "nodemon ./bin/www",
+    "test": "nyc mocha --recursive --exit || true",
+    "test-print-coverage": "nyc --reporter=lcov mocha --recursive --exit || true",
+    "build": "npm run development",
+    "build-prod": "npm run production",
+    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.sabay.com:payment-network/public/app.web.cashier.sample.ssn.digital.git"
+  },
+  "keywords": [
+    "ssn",
+    "cashier",
+    "recurring"
+  ],
+  "author": "Sabay Digital Corp.",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/joi": "^15.0.3",
+    "axios": "^0.19.0",
+    "clickhouse": "^1.2.20",
+    "cookie-parser": "^1.4.4",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "debug": "^4.1.1",
+    "dotenv": "^8.0.0",
+    "ejs": "^2.6.1",
+    "express": "^4.17.1",
+    "express-error-slack": "^1.1.1",
+    "helmet": "^3.18.0",
+    "lodash": "^4.17.11",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.25",
+    "morgan": "^1.9.1",
+    "mysql": "^2.17.1",
+    "nodemon": "^1.19.1",
+    "sdk.nacl.ssn.digital": "git+https://ssn-nacl:4_yXuDEoZX-fxEjey1Rp@git.sabay.com/payment-network/sdk/sdk.nacl.ssn.digital#master",
+    "ssn-constants": "git+https://gitlab+deploy-token-16:UaKPMcJLFE9Js6Jivx_B@git.sabay.com/payment-network/sdk/sdk.constants.ssn.digital#master",
+    "ssn-keypair": "git+https://gitlab+deploy-token-15:G1is-NBGQkBizqmUXjBK@git.sabay.com/payment-network/sdk/sdk.keypair.ssn.digital#master",
+    "ssn-utils": "git+https://gitlab+deploy-token-14:xsZ5BytRZd3Qn7j85bxN@git.sabay.com/payment-network/sdk/sdk.utils.ssn.digital#master",
+    "stellar-sdk": "^3.0.1",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.9.0",
+    "babel-loader": "^8.0.6",
+    "bootstrap": "^4.3.1",
+    "chai": "~4.2.0",
+    "chai-as-promised": "~7.1.1",
+    "cross-env": "^5.2.0",
+    "css-loader": "^3.0.0",
+    "jquery": "^3.4.1",
+    "laravel-mix": "^4.0.16",
+    "mocha": "~6.1.4",
+    "nyc": "~14.1.1",
+    "popper.js": "^1.15.0",
+    "resolve-url-loader": "2.3.1",
+    "sass": "^1.22.2",
+    "sass-loader": "7.*",
+    "vue-template-compiler": "^2.6.10",
+    "webpack": "~4.32.2",
+    "webpack-cli": "~3.3.2"
+  }
+}

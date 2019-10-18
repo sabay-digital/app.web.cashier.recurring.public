@@ -63,30 +63,24 @@ router.post('/:payment_address', (req, res, next) => {
        * FROM USER AND LOG TO DATABASE OF YOUR CHOICE.
        * 
        *  Example below log to Clickhouse database and payment authorization form to be implemented
+          return Transaction.create([
+            mysql.escape(now()), // timestamp
+            mysql.escape(orderid), // uuid
+            mysql.escape(STATUS_COMPLETED), // txn_status
+            mysql.escape(process.env.CASHIER_PK), // from
+            mysql.escape(network_address), // to
+            mysql.escape(message.details.memo), // memo
+            mysql.escape(message.details.payment.amount), // amount
+            mysql.escape(process.env.CASHIER_PK), // asset_issuer
+            mysql.escape(message.details.payment.asset_code), // asset_code
+            mysql.escape(""), // callback_url
+            mysql.escape(""), // pp_response
+            mysql.escape(""), // ssn_txn_hash
+          ])
        */
 
-      // Insert pending log of transaction into ClickHouse
-      // return Transaction.create([
-      //   mysql.escape(now()), // timestamp
-      //   mysql.escape(orderid), // uuid
-      //   mysql.escape(STATUS_COMPLETED), // txn_status
-      //   mysql.escape(process.env.CASHIER_PK), // from
-      //   mysql.escape(network_address), // to
-      //   mysql.escape(message.details.memo), // memo
-      //   mysql.escape(message.details.payment.amount), // amount
-      //   mysql.escape(process.env.CASHIER_PK), // asset_issuer
-      //   mysql.escape(message.details.payment.asset_code), // asset_code
-      //   mysql.escape(""), // callback_url
-      //   mysql.escape(""), // pp_response
-      //   mysql.escape(""), // ssn_txn_hash
-      // ])
-      // .then(() =>  {
-      //   return res.send('TO BE IMPLEMENTED FOR PAYMENT AUTHORIZATION');
-      // });
       return res.send('TO BE IMPLEMENTED FOR PAYMENT AUTHORIZATION');
-
     });
-    
   })
   .catch(error => {
     console.log(error);
@@ -103,9 +97,8 @@ router.post('/:payment_address', (req, res, next) => {
 
 // [DELETE] /v1/recurring/{payment_address}
 router.delete('/:payment_address', (req, res, next) => {
-  // RESOLVE PAYMENT ADDRESS
     // define variables  
-    let network_address, msg;
+    let network_address;
 
     // resolve network address from payment address
     return axios.post(process.env.PAYMENT_ADDRESS_URL, 
@@ -113,7 +106,6 @@ router.delete('/:payment_address', (req, res, next) => {
         payment_address: req.params.payment_address
       })
     ).then(result => {
-      
       if (result.data.status && result.data.status != 200) {
         return Promise.reject(result.data);
       }
@@ -121,18 +113,16 @@ router.delete('/:payment_address', (req, res, next) => {
       // successfully get network_address
       network_address = result.data.network_address;
       return verifySignature(req.params.payment_address, result.data.signature, result.data.network_address);
-
     })
     .then((isVerify) => {
       let payment_addresss = req.params.payment_address.split('*');
-      
       if (isVerify) {
-        console.log('Transaction for ' + payment_addresss[0] + ' dropped succesfully!');
         // DELETE TRANSACTION FROM DB AND STOP RECURRING CHARGE
+        console.log('Transaction for ' + payment_addresss[0] + ' dropped succesfully!');
 
         return res.status(200).json({status: 200, title: "recurring payment deleted"});
       } else {
-        console.log('Transaction for ' + payment_addresss[0] + ' dropped fail!' );
+        console.log('Transaction for ' + payment_addresss[0] + ' dropped fail!' ); // log the result
         return res.status(401).json({status: 401, title: "not authorized to delete subscription"});
       }
     })

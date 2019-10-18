@@ -7,7 +7,7 @@ var StellarSDK  = require('stellar-sdk');
 var { decrypt }         = require('sdk.nacl.ssn.digital');
 var { verifySignature } = require('ssn-utils');
 
-// [POST] /v1/recurring/{payment_address}
+// Route [POST] /v1/recurring/{payment_address}
 router.post('/:payment_address', (req, res, next) => {
 
   // define variables  
@@ -100,14 +100,10 @@ router.post('/:payment_address', (req, res, next) => {
                 /**
                * BELOW SECTION IS FOR SPECIFIC IMPLEMENTATION OF YOUR PAYMENT PROVIDER FOR PAYMENT AUTHORIZATION
                * FROM USER AND LOG TO DATABASE OF YOUR CHOICE.
-               * 
-               *  Example below log to Clickhouse database and payment authorization form to be implemented
+               *
               */
              return res.send({status: 200, title: "Transaction is successful.", transaction_hash: result.data.hash});
             })       
-          })
-          .then(() => {
-            
           });
         }
       });
@@ -127,7 +123,7 @@ router.post('/:payment_address', (req, res, next) => {
 });
 
 
-// [DELETE] /v1/recurring/{payment_address}
+// Route [DELETE] /v1/recurring/{payment_address}
 router.delete('/:payment_address', (req, res, next) => {
     // define variables  
     let network_address;

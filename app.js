@@ -35,8 +35,8 @@ app.use('/v1', router);
 // ==========
 
 // error reporting to slack webhook
-app.use(expressErrorSlack({
-  webhookUri: process.env.SLACK_WEBHOOK_URL
-}));
+// app.use(expressErrorSlack({
+//   webhookUri: process.env.SLACK_WEBHOOK_URL
+// }));
 
 module.exports = app;

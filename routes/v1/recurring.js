@@ -2,12 +2,12 @@ var express     = require('express');
 var router      = express.Router();
 var querystring = require('querystring');
 var axios       = require('axios');
-var uuidv4      = require('uuid/v4');
-var controller  = require('../../app/controllers/recurring');
-var { decrypt } = require('sdk.nacl.ssn.digital');
+var StellarSDK  = require('stellar-sdk');
+
+var { decrypt }         = require('sdk.nacl.ssn.digital');
 var { verifySignature } = require('ssn-utils');
 
-// [POST] /v1/recurring/{payment_address}
+// Route [POST] /v1/recurring/{payment_address}
 router.post('/:payment_address', (req, res, next) => {
 
   // define variables  
@@ -45,41 +45,69 @@ router.post('/:payment_address', (req, res, next) => {
       if (result.data.status && result.data.status != 200) {
         return Promise.reject(result.data);
       }
-
-      // CHECK AUTH_REQUIRED FROM ACCOUNT
-      console.log('Init transaction for ' + req.params.payment_address + ' with na: ' + network_address);
-
-      const orderid = uuidv4(); // Reference ID
+     console.log(message.details.memo)
+      // Create transaction channel accounts on the ssn api
+      // Sample submit transaction to network between smart@home and soyo
+      return axios.post(process.env.API_SSN_URL + '/create/transaction', 
+        querystring.stringify({
+          from: process.env.CASHIER_PK, // Smart@home Master Account
+          to: "GA3336CDCBKOFJUOHZA3EYDHML7WNB5TJKA4OYF52RVZ2SITNEN2NWKT", // Recurring Master Account
+          amount: message.details.payment.amount,
+          memo: message.details.memo, 
+          asset_code: message.details.payment.asset_code, 
+          asset_issuer: process.env.CASHIER_PK
+        })
+      )
+      .then(result => {
       
-      /**
-       * BELOW INFORMATION COULD BE USED TO CONSTRUCT AUTHORIZE PAYMENT OBJECT
-       */
-      const currency = result.data.asset_code;
-      const orderDate = controller.getOrderDate();
-      const orderAmount = '1';
+        if (result.data.status == 200) {
+          // Load Transaction 
+          const transaction = new StellarSDK.Transaction(result.data.envelope_xdr, process.env.NETWORK_PASSPHRASE);
+          
+          // Generate keypair
+          const localSignerKeypair = StellarSDK.Keypair.fromSecret(process.env.CASHIER_LOCAL_SIGNER_SK);
+        
+          // get signature on transaction from keypair
+          const signature = transaction.getKeypairSignature(localSignerKeypair);
 
-      /**
-       * BELOW SECTION IS FOR SPECIFIC IMPLEMENTATION OF YOUR PAYMENT PROVIDER FOR PAYMENT AUTHORIZATION
-       * FROM USER AND LOG TO DATABASE OF YOUR CHOICE.
-       * 
-       *  Example below log to Clickhouse database and payment authorization form to be implemented
-          return Transaction.create([
-            mysql.escape(now()), // timestamp
-            mysql.escape(orderid), // uuid
-            mysql.escape(STATUS_COMPLETED), // txn_status
-            mysql.escape(process.env.CASHIER_PK), // from
-            mysql.escape(network_address), // to
-            mysql.escape(message.details.memo), // memo
-            mysql.escape(message.details.payment.amount), // amount
-            mysql.escape(process.env.CASHIER_PK), // asset_issuer
-            mysql.escape(message.details.payment.asset_code), // asset_code
-            mysql.escape(""), // callback_url
-            mysql.escape(""), // pp_response
-            mysql.escape(""), // ssn_txn_hash
-          ])
-       */
+          // sign transaction
+          transaction.addSignature(localSignerKeypair.publicKey(), signature);
 
-      return res.send('TO BE IMPLEMENTED FOR PAYMENT AUTHORIZATION');
+          // convert transaction to XDRString
+          const xdrString = transaction.toEnvelope().toXDR('base64');
+          
+          return Promise.resolve(xdrString)
+          .then((transactionXdr) => {
+
+            const formParams = { xdr_string: transactionXdr };
+            // make an API call to first sign's service to sign transaction.
+            // on success will return response's data:
+            // - xdr_string
+            return axios.post(process.env.SIGN_1_ENDPOINT, formParams);
+          })
+          .then(({data}) => {
+            return axios.post(process.env.SIGN_2_ENDPOINT, data);
+          })
+          .then(({data}) => {
+              
+            return axios.post(process.env.API_SSN_URL + '/transactions', 
+              querystring.stringify({
+                tx: data.xdr_string
+              })
+            )
+            .then((result) => {
+              console.log(result);
+                /**
+               * BELOW SECTION IS FOR SPECIFIC IMPLEMENTATION OF YOUR PAYMENT PROVIDER FOR PAYMENT AUTHORIZATION
+               * FROM USER AND LOG TO DATABASE OF YOUR CHOICE.
+               *
+              */
+             return res.send({status: 200, title: "Transaction is successful.", transaction_hash: result.data.hash});
+            })       
+          });
+        }
+      });
+      
     });
   })
   .catch(error => {
@@ -95,7 +123,7 @@ router.post('/:payment_address', (req, res, next) => {
 });
 
 
-// [DELETE] /v1/recurring/{payment_address}
+// Route [DELETE] /v1/recurring/{payment_address}
 router.delete('/:payment_address', (req, res, next) => {
     // define variables  
     let network_address;
